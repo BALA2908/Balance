@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base theme: Compose owns the real styling; this just sets window basics. -->
+    <style name="Theme.Balance" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/cozy_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Splash screen (androidx core-splashscreen) -->
+    <style name="Theme.Balance.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/cozy_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Balance</item>
+    </style>
+
+    <!-- Transparent theme so QuickAddActivity feels like a sheet over whatever's behind it. -->
+    <style name="Theme.Balance.Transparent" parent="Theme.Balance">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+</resources>

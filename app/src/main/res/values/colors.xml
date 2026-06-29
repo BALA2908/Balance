@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark-first cozy palette. Real palette lives in Compose theme (Color.kt);
+         these exist only for the window/splash before Compose takes over. -->
+    <color name="cozy_background">#16130F</color>
+    <color name="cozy_accent">#F0A868</color>
+    <color name="ic_launcher_background">#16130F</color>
+</resources>

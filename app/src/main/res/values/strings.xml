@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Balance</string>
+
+    <!-- Quick Add -->
+    <string name="quick_add_title">Add expense</string>
+    <string name="quick_add_note_hint">Add a note (optional)</string>
+    <string name="quick_add_save">Save</string>
+    <string name="quick_add_saved">Saved</string>
+
+    <!-- Shortcut -->
+    <string name="shortcut_add_short">Add</string>
+    <string name="shortcut_add_long">Add expense</string>
+
+    <!-- Auto-import notification listener -->
+    <string name="notification_listener_label">Balance auto-import (UPI)</string>
+
+    <!-- Separate launcher/RegiStar entry that opens Quick Add directly -->
+    <string name="quick_add_launcher_label">Add expense</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_description">Balance — safe to spend &amp; quick add</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_open_quick_add">Add a new expense</string>
+    <string name="cd_delete_digit">Delete last digit</string>
+    <string name="cd_category">Category: %1$s</string>
+</resources>

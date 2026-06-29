@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple cozy "balance" mark: a warm coin/leaf curve. Placeholder you can replace. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F0A868"
+        android:pathData="M54,30 C40,30 30,40 30,54 C30,68 40,78 54,78 C68,78 78,68 78,54 C78,46 74,39 68,35 C70,40 70,46 66,51 C62,57 54,58 49,54 C44,50 44,42 49,37 C51,34 54,32 54,30 Z" />
+    <path
+        android:fillColor="#FFE7C9"
+        android:pathData="M52,46 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+</vector>

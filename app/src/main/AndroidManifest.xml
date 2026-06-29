@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:name=".BudgetApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Balance"
+        tools:targetApi="34">
+
+        <!-- Main host: dashboard + all in-app screens -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Balance.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Dedicated Quick Add entry point.
+          Two ways to reach it from outside the app:
+            1. By component: RegiStar (Good Lock) can launch this activity directly.
+            2. By deep link:  balance://quickadd   (also usable from adb / shortcuts).
+          The app does NOT capture the double-tap-back gesture itself — RegiStar fires this.
+        -->
+        <activity
+            android:name=".QuickAddActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Balance.Transparent">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="balance" android:host="quickadd" />
+            </intent-filter>
+            <!-- App shortcut (long-press launcher icon) also routes here -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!--
+          A separate launcher entry ("Add expense") that opens Quick Add directly.
+          This is what makes Quick Add selectable as its own "app" in launchers and
+          in Samsung RegiStar's back-tap "open app" list (RegiStar doesn't expose
+          app shortcuts, only apps) — so double-tap-back can open the popup, not the
+          dashboard. It also appears as a handy second icon in the app drawer.
+        -->
+        <activity-alias
+            android:name=".QuickAddLauncher"
+            android:targetActivity=".QuickAddActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/quick_add_launcher_label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!--
+          Auto-import (opt-in). Parses UPI payment notifications on-device into a
+          review queue. The user must enable it in Settings AND grant notification
+          access. Notifications only — never SMS.
+        -->
+        <service
+            android:name=".service.UpiNotificationListenerService"
+            android:exported="false"
+            android:label="@string/notification_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Home-screen widget: safe-to-spend + one-tap add. -->
+        <receiver
+            android:name=".widget.SafeToSpendWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_description">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_safe_to_spend_info" />
+        </receiver>
+
+        <!-- Shares exported CSV/PDF files from the app cache. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+</manifest>
