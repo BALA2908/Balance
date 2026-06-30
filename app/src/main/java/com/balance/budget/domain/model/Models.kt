@@ -17,6 +17,45 @@ data class Category(
     val sortOrder: Int,
 )
 
+data class Account(
+    val id: Long,
+    val name: String,
+    val type: AccountType,
+    val iconKey: String,
+    val colorHex: String,
+    val openingBalanceMinor: Long?,
+    val isDefault: Boolean,
+    val isArchived: Boolean,
+    val sortOrder: Int,
+)
+
+data class Tag(
+    val id: Long,
+    val name: String,
+    val colorHex: String,
+    val sortOrder: Int,
+)
+
+data class CategoryRule(
+    val id: Long,
+    val pattern: String,
+    val categoryId: Long,
+    val sortOrder: Int,
+)
+
+data class SavingsGoal(
+    val id: Long,
+    val name: String,
+    val iconKey: String,
+    val colorHex: String,
+    val targetMinor: Long,
+    val savedMinor: Long,
+    val sortOrder: Int,
+) {
+    val fraction: Float get() = if (targetMinor > 0) (savedMinor.toFloat() / targetMinor).coerceIn(0f, 1f) else 0f
+    val isComplete: Boolean get() = targetMinor > 0 && savedMinor >= targetMinor
+}
+
 data class Expense(
     val id: Long,
     val amountMinor: Long,
@@ -26,6 +65,8 @@ data class Expense(
     val createdAt: Long,
     val source: ExpenseSource,
     val merchant: String?,
+    /** Wallet/payment method this was paid from; null = unassigned. */
+    val accountId: Long? = null,
 )
 
 /** An expense joined with its category, for display in lists. */
@@ -78,4 +119,8 @@ data class ExpenseDraft(
     val timestamp: Long,
     val source: ExpenseSource = ExpenseSource.MANUAL,
     val merchant: String? = null,
+    /** Wallet/payment method; null = unassigned (resolved to default by Quick Add). */
+    val accountId: Long? = null,
+    /** Tags to attach after the expense row is written. */
+    val tagIds: List<Long> = emptyList(),
 )

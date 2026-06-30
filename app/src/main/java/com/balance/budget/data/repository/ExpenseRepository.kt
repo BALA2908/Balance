@@ -31,6 +31,7 @@ class ExpenseRepository @Inject constructor(
             createdAt = clock(),
             source = draft.source,
             merchant = draft.merchant,
+            accountId = draft.accountId,
         )
         return expenseDao.insert(entity)
     }
@@ -46,6 +47,8 @@ class ExpenseRepository @Inject constructor(
                 createdAt = expense.createdAt,
                 source = expense.source,
                 merchant = expense.merchant,
+                // Carry the account through edits — never silently null it.
+                accountId = expense.accountId,
             )
         )
     }
@@ -63,6 +66,9 @@ class ExpenseRepository @Inject constructor(
     /** Searchable/filterable history (note/merchant text + optional category). */
     fun observeFiltered(query: String, categoryId: Long?): Flow<List<ExpenseWithCategory>> =
         expenseDao.observeFiltered(query.trim(), categoryId).map { rows -> rows.map { it.toDomain() } }
+
+    fun observeForTag(tagId: Long): Flow<List<ExpenseWithCategory>> =
+        expenseDao.observeForTag(tagId).map { rows -> rows.map { it.toDomain() } }
 
     fun observeForMonth(ym: YearMonth): Flow<List<ExpenseWithCategory>> =
         expenseDao.observeBetween(

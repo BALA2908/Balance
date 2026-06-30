@@ -33,6 +33,8 @@ data class AnalyticsInputs(
     val prevCategoryBudgetsMinor: Map<Long, Long> = emptyMap(),
     /** "Move budget between categories" entries recorded for this month. */
     val monthAdjustments: List<BudgetAdjustment> = emptyList(),
+    /** Envelope (zero-based) mode: safe-to-spend uses the sum of category envelopes. */
+    val envelopeMode: Boolean = false,
 )
 
 /**

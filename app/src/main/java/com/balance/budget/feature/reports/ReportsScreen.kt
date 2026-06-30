@@ -33,6 +33,7 @@ import com.balance.budget.core.util.Money
 import com.balance.budget.domain.ai.AiText
 import com.balance.budget.domain.ai.AiTextSource
 import com.balance.budget.domain.analytics.AnalyticsSnapshot
+import com.balance.budget.domain.analytics.SpendingPersonality
 import com.balance.budget.domain.analytics.TrendDirection
 import com.balance.budget.feature.reports.charts.CategoryDonut
 import com.balance.budget.feature.reports.charts.SpendTrendChart
@@ -181,6 +182,55 @@ fun ReportsScreen(
         ComparisonRow(s)
 
         Spacer(Modifier.height(16.dp))
+
+        // Spending personality (deterministic archetype)
+        SpendingPersonality.from(s)?.let { p ->
+            SectionTitle("Your spending personality")
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = p.emoji, style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(end = 14.dp))
+                    Column {
+                        Text(p.title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                        Text(p.blurb, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // Top merchants
+        if (s.topMerchants.isNotEmpty()) {
+            SectionTitle("Top places")
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                    s.topMerchants.forEach { m ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(m.merchant, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+                                Text(
+                                    "${m.count} ${if (m.count == 1) "visit" else "visits"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Text(Money.format(m.spentMinor), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
 
         // Gentle suggestions
         SectionTitle("Gentle suggestions")

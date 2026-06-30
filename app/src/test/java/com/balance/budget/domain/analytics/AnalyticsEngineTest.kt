@@ -72,6 +72,7 @@ class AnalyticsEngineTest {
         prevOverallBudget: Long? = null,
         prevCategoryBudgets: Map<Long, Long> = emptyMap(),
         monthAdjustments: List<BudgetAdjustment> = emptyList(),
+        envelopeMode: Boolean = false,
     ) = AnalyticsInputs(
         nowMillis = nowMillis,
         monthExpenses = monthExpenses,
@@ -85,6 +86,7 @@ class AnalyticsEngineTest {
         prevOverallBudgetMinor = prevOverallBudget,
         prevCategoryBudgetsMinor = prevCategoryBudgets,
         monthAdjustments = monthAdjustments,
+        envelopeMode = envelopeMode,
     )
 
     @Test fun `empty month is empty with no-budget safe-to-spend`() {
@@ -360,6 +362,32 @@ class AnalyticsEngineTest {
         val travelSlice = s.byCategory.first { it.categoryId == travel.id }
         assertEquals(0L, travelSlice.carryInMinor)
         assertEquals(5_000_00L, travelSlice.effectiveBudgetMinor)
+    }
+
+    @Test fun `envelope mode bases safe-to-spend on the sum of category envelopes`() {
+        // Overall budget 30,000 but envelopes sum to 15,000 (Food 10k + Travel 5k).
+        val s = AnalyticsEngine.compute(
+            inputs(
+                monthExpenses = listOf(ex(1_000_00, food, 4)),
+                overallBudget = 30_000_00,
+                categoryBudgets = mapOf(food.id to 10_000_00, travel.id to 5_000_00),
+                envelopeMode = true,
+            )
+        ).safeToSpend
+        // pool = 15,000 (envelopes) - 1,000 spent = 14,000 (NOT 29,000 from the overall budget)
+        assertEquals(14_000_00L, s.remainingPoolMinor)
+    }
+
+    @Test fun `envelope mode off keeps overall-budget safe-to-spend`() {
+        val s = AnalyticsEngine.compute(
+            inputs(
+                monthExpenses = listOf(ex(1_000_00, food, 4)),
+                overallBudget = 30_000_00,
+                categoryBudgets = mapOf(food.id to 10_000_00, travel.id to 5_000_00),
+                envelopeMode = false,
+            )
+        ).safeToSpend
+        assertEquals(29_000_00L, s.remainingPoolMinor)
     }
 
     private fun prevMonthMillis(day: Int): Long =

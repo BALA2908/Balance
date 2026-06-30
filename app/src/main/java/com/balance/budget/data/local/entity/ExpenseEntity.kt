@@ -20,9 +20,15 @@ import com.balance.budget.domain.model.ExpenseSource
             parentColumns = ["id"],
             childColumns = ["category_id"],
             onDelete = ForeignKey.RESTRICT,
-        )
+        ),
+        ForeignKey(
+            entity = AccountEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["account_id"],
+            onDelete = ForeignKey.SET_NULL,
+        ),
     ],
-    indices = [Index("category_id"), Index("timestamp")],
+    indices = [Index("category_id"), Index("timestamp"), Index("account_id")],
 )
 data class ExpenseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -36,4 +42,6 @@ data class ExpenseEntity(
     val source: ExpenseSource = ExpenseSource.MANUAL,
     /** Parsed merchant name, populated by auto-import (Phase 4). */
     val merchant: String? = null,
+    /** Wallet/payment method (FK accounts, SET NULL on delete); null = unassigned. */
+    @ColumnInfo(name = "account_id") val accountId: Long? = null,
 )

@@ -11,7 +11,12 @@ object Routes {
     // Pushed (non-tab) routes
     const val BUDGETS = "budgets"
     const val CATEGORIES = "categories"
+    const val ACCOUNTS = "accounts"
+    const val TAGS = "tags"
+    const val RULES = "rules"
     const val RECURRING = "recurring"
+    const val BILLS = "bills"
+    const val GOALS = "goals"
     const val ONBOARDING = "onboarding"
     const val IMPORT_REVIEW = "import_review"
     const val ASK = "ask"

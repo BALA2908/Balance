@@ -12,10 +12,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.balance.budget.core.ui.theme.BalanceTheme
 import com.balance.budget.data.categorize.Categorizer
 import com.balance.budget.data.categorize.CategorizerStore
+import com.balance.budget.data.categorize.CategoryResolver
 import com.balance.budget.data.local.BudgetDatabase
+import com.balance.budget.data.local.seed.DefaultAccounts
 import com.balance.budget.data.local.seed.DefaultCategories
+import com.balance.budget.data.repository.AccountRepository
 import com.balance.budget.data.repository.CategoryRepository
+import com.balance.budget.data.repository.CategoryRuleRepository
 import com.balance.budget.data.repository.ExpenseRepository
+import com.balance.budget.data.repository.TagRepository
 import com.balance.budget.feature.quickadd.QuickAddSheetContent
 import com.balance.budget.feature.quickadd.QuickAddViewModel
 import kotlinx.coroutines.flow.first
@@ -46,12 +51,19 @@ class AddExpenseFlowTest {
         db = Room.inMemoryDatabaseBuilder(context, BudgetDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        runBlocking { db.categoryDao().insertAll(DefaultCategories.list) }
+        runBlocking {
+            db.categoryDao().insertAll(DefaultCategories.list)
+            db.accountDao().insertAll(DefaultAccounts.list)
+        }
 
+        val categorizer = Categorizer(CategorizerStore(context))
         viewModel = QuickAddViewModel(
             expenseRepository = ExpenseRepository(db.expenseDao(), clock = { 1_700_000_000_000L }),
             categoryRepository = CategoryRepository(db.categoryDao()),
-            categorizer = Categorizer(CategorizerStore(context)),
+            accountRepository = AccountRepository(db.accountDao()),
+            tagRepository = TagRepository(db.tagDao()),
+            categorizer = categorizer,
+            categoryResolver = CategoryResolver(CategoryRuleRepository(db.categoryRuleDao()), categorizer),
             clock = { 1_700_000_000_000L },
         )
     }

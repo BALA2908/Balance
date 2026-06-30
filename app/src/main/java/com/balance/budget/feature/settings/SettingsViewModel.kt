@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.balance.budget.data.export.ExportManager
 import com.balance.budget.data.preferences.SettingsRepository
 import com.balance.budget.domain.model.ThemeMode
+import com.balance.budget.notifications.NudgeScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -23,12 +24,15 @@ data class SettingsUiState(
     val aiCloud: Boolean = false,
     val autoImport: Boolean = false,
     val rolloverEnabled: Boolean = false,
+    val proactiveNudges: Boolean = false,
+    val envelopeMode: Boolean = false,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val exportManager: ExportManager,
+    private val nudgeScheduler: NudgeScheduler,
 ) : ViewModel() {
 
     /** Emits a ready-to-share file (CSV/PDF), or an error message. */
@@ -52,8 +56,10 @@ class SettingsViewModel @Inject constructor(
     val state: StateFlow<SettingsUiState> = combine(
         baseState,
         settings.rolloverEnabled,
-    ) { base, rollover ->
-        base.copy(rolloverEnabled = rollover)
+        settings.proactiveNudges,
+        settings.envelopeMode,
+    ) { base, rollover, nudges, envelope ->
+        base.copy(rolloverEnabled = rollover, proactiveNudges = nudges, envelopeMode = envelope)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
@@ -62,6 +68,11 @@ class SettingsViewModel @Inject constructor(
     fun setAiCloud(on: Boolean) = viewModelScope.launch { settings.setAiCloudEnabled(on) }
     fun setAutoImport(on: Boolean) = viewModelScope.launch { settings.setAutoImportEnabled(on) }
     fun setRolloverEnabled(on: Boolean) = viewModelScope.launch { settings.setRolloverEnabled(on) }
+    fun setProactiveNudges(on: Boolean) = viewModelScope.launch {
+        settings.setProactiveNudges(on)
+        nudgeScheduler.setEnabled(on)
+    }
+    fun setEnvelopeMode(on: Boolean) = viewModelScope.launch { settings.setEnvelopeMode(on) }
 
     fun exportCsv() = export { exportManager.exportCsv() }
     fun exportPdf() = export { exportManager.exportPdf() }

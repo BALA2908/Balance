@@ -61,14 +61,22 @@ object AnalyticsEngine {
             max(0L, inputs.prevOverallBudgetMinor - sumOf(inputs.prevMonthExpenses))
         } else 0L
 
+        // Envelope (zero-based) mode: the spendable pool is the sum of category
+        // envelopes (which already include per-category carry + moves), so we don't
+        // add the overall carry again. Default off → unchanged behavior.
+        val envelopeSum = byCategory.sumOf { it.effectiveBudgetMinor ?: 0L }
+        val useEnvelope = inputs.envelopeMode && envelopeSum > 0L
+        val stsBudget = if (useEnvelope) envelopeSum else inputs.overallBudgetMinor
+        val stsCarry = if (useEnvelope) 0L else rolloverCarry
+
         val projection = projectMonthEnd(mtd, daysElapsed, daysInMonth, inputs.overallBudgetMinor, daysRemaining)
         val safeToSpend = safeToSpend(
-            overallBudget = inputs.overallBudgetMinor,
+            overallBudget = stsBudget,
             mtd = mtd,
             recurringTotal = inputs.activeRecurringTotalMinor,
             recurringPaid = inputs.recurringPaidThisMonthMinor,
             daysRemaining = daysRemaining,
-            rolloverCarry = rolloverCarry,
+            rolloverCarry = stsCarry,
         )
         val streaks = streaks(inputs.monthExpenses, inputs.overallBudgetMinor, today, month, zone)
         val anomalies = anomalies(inputs.monthExpenses)

@@ -91,6 +91,11 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
+    // WorkManager + Hilt worker injection (proactive notifications)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     // Room + SQLCipher
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

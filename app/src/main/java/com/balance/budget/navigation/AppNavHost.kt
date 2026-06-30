@@ -23,8 +23,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.balance.budget.R
+import com.balance.budget.feature.accounts.AccountManagerScreen
 import com.balance.budget.feature.budgets.BudgetsScreen
 import com.balance.budget.feature.categories.CategoryManagerScreen
+import com.balance.budget.feature.tags.TagManagerScreen
+import com.balance.budget.feature.rules.RulesScreen
+import com.balance.budget.feature.bills.BillsScreen
+import com.balance.budget.feature.goals.SavingsGoalsScreen
 import com.balance.budget.feature.assistant.AskScreen
 import com.balance.budget.feature.dashboard.DashboardScreen
 import com.balance.budget.feature.history.HistoryScreen
@@ -113,6 +118,11 @@ fun AppScaffold() {
                     onNavigateToRecurring = { navController.navigate(Routes.RECURRING) },
                     onNavigateToImportReview = { navController.navigate(Routes.IMPORT_REVIEW) },
                     onNavigateToCategories = { navController.navigate(Routes.CATEGORIES) },
+                    onNavigateToAccounts = { navController.navigate(Routes.ACCOUNTS) },
+                    onNavigateToTags = { navController.navigate(Routes.TAGS) },
+                    onNavigateToRules = { navController.navigate(Routes.RULES) },
+                    onNavigateToBills = { navController.navigate(Routes.BILLS) },
+                    onNavigateToGoals = { navController.navigate(Routes.GOALS) },
                 )
             }
             composable(Routes.BUDGETS) {
@@ -124,6 +134,36 @@ fun AppScaffold() {
             }
             composable(Routes.CATEGORIES) {
                 CategoryManagerScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.ACCOUNTS) {
+                AccountManagerScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.TAGS) {
+                TagManagerScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.RULES) {
+                RulesScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.BILLS) {
+                BillsScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.GOALS) {
+                SavingsGoalsScreen(
                     contentPadding = padding,
                     onBack = { navController.popBackStack() },
                 )

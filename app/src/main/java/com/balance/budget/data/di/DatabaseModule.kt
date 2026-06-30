@@ -5,13 +5,21 @@ import androidx.room.Room
 import com.balance.budget.data.local.BudgetDatabase
 import com.balance.budget.data.local.MIGRATION_1_2
 import com.balance.budget.data.local.MIGRATION_2_3
+import com.balance.budget.data.local.MIGRATION_3_4
+import com.balance.budget.data.local.MIGRATION_4_5
+import com.balance.budget.data.local.MIGRATION_5_6
+import com.balance.budget.data.local.MIGRATION_6_7
 import com.balance.budget.data.local.crypto.DatabaseKeyProvider
+import com.balance.budget.data.local.dao.AccountDao
 import com.balance.budget.data.local.dao.BudgetAdjustmentDao
 import com.balance.budget.data.local.dao.BudgetDao
 import com.balance.budget.data.local.dao.CategoryDao
+import com.balance.budget.data.local.dao.CategoryRuleDao
 import com.balance.budget.data.local.dao.ExpenseDao
 import com.balance.budget.data.local.dao.ImportCandidateDao
 import com.balance.budget.data.local.dao.RecurringDao
+import com.balance.budget.data.local.dao.SavingsGoalDao
+import com.balance.budget.data.local.dao.TagDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,7 +47,9 @@ object DatabaseModule {
         return Room.databaseBuilder(context, BudgetDatabase::class.java, BudgetDatabase.NAME)
             .openHelperFactory(factory)
             // Real migrations only — never a destructive fallback for financial data.
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(
+                MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            )
             .build()
     }
 
@@ -51,4 +61,8 @@ object DatabaseModule {
         db.importCandidateDao()
     @Provides fun provideBudgetAdjustmentDao(db: BudgetDatabase): BudgetAdjustmentDao =
         db.budgetAdjustmentDao()
+    @Provides fun provideAccountDao(db: BudgetDatabase): AccountDao = db.accountDao()
+    @Provides fun provideTagDao(db: BudgetDatabase): TagDao = db.tagDao()
+    @Provides fun provideCategoryRuleDao(db: BudgetDatabase): CategoryRuleDao = db.categoryRuleDao()
+    @Provides fun provideSavingsGoalDao(db: BudgetDatabase): SavingsGoalDao = db.savingsGoalDao()
 }

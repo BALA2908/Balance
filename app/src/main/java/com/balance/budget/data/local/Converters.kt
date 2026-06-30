@@ -1,6 +1,7 @@
 package com.balance.budget.data.local
 
 import androidx.room.TypeConverter
+import com.balance.budget.domain.model.AccountType
 import com.balance.budget.domain.model.BudgetPeriod
 import com.balance.budget.domain.model.ExpenseSource
 import com.balance.budget.domain.model.RecurringCadence
@@ -15,4 +16,7 @@ class Converters {
 
     @TypeConverter fun cadenceToString(v: RecurringCadence): String = v.name
     @TypeConverter fun stringToCadence(v: String): RecurringCadence = RecurringCadence.valueOf(v)
+
+    @TypeConverter fun accountTypeToString(v: AccountType): String = v.name
+    @TypeConverter fun stringToAccountType(v: String): AccountType = AccountType.valueOf(v)
 }

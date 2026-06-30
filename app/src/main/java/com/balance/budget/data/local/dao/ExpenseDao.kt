@@ -36,6 +36,18 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses ORDER BY timestamp DESC, id DESC")
     fun observeAll(): Flow<List<ExpenseWithCategoryRow>>
 
+    /** Expenses carrying a given tag (for the cross-category trip recap). */
+    @Transaction
+    @Query(
+        """
+        SELECT e.* FROM expenses e
+        INNER JOIN expense_tags et ON et.expense_id = e.id
+        WHERE et.tag_id = :tagId
+        ORDER BY e.timestamp DESC, e.id DESC
+        """
+    )
+    fun observeForTag(tagId: Long): Flow<List<ExpenseWithCategoryRow>>
+
     @Transaction
     @Query(
         """

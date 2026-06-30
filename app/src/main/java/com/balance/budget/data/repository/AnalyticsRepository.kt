@@ -62,6 +62,7 @@ class AnalyticsRepository @Inject constructor(
         val prevOverallBudget: Budget?,
         val recurringTotal: Long,
         val enabled: Boolean,
+        val envelope: Boolean,
         val adjustments: List<BudgetAdjustment>,
     )
 
@@ -81,10 +82,11 @@ class AnalyticsRepository @Inject constructor(
             budgetRepository.observeCategoryBudgets(prevMonth),
             budgetRepository.observeOverallBudget(prevMonth),
             recurringRepository.observeActiveTotal(),
-            settings.rolloverEnabled,
+            // Fold both budgeting flags into one slot to stay within combine's arity.
+            combine(settings.rolloverEnabled, settings.envelopeMode) { r, e -> r to e },
             budgetAdjustmentRepository.observeForMonth(monthKey),
-        ) { prevCatBudgets, prevOverall, recurringTotal, enabled, adjustments ->
-            Rollover(prevCatBudgets, prevOverall, recurringTotal, enabled, adjustments)
+        ) { prevCatBudgets, prevOverall, recurringTotal, flags, adjustments ->
+            Rollover(prevCatBudgets, prevOverall, recurringTotal, flags.first, flags.second, adjustments)
         },
     ) { core, roll ->
         val recurringPaid = core.monthExpenses
@@ -104,6 +106,7 @@ class AnalyticsRepository @Inject constructor(
                 prevOverallBudgetMinor = roll.prevOverallBudget?.amountMinor,
                 prevCategoryBudgetsMinor = roll.prevCategoryBudgets.toAmountMap(),
                 monthAdjustments = roll.adjustments,
+                envelopeMode = roll.envelope,
             )
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5_000), AnalyticsSnapshot.empty(month))
@@ -137,6 +140,7 @@ class AnalyticsRepository @Inject constructor(
                 prevOverallBudgetMinor = budgetRepository.observeOverallBudget(prev).first()?.amountMinor,
                 prevCategoryBudgetsMinor = budgetRepository.observeCategoryBudgets(prev).first().toAmountMap(),
                 monthAdjustments = budgetAdjustmentRepository.getForMonth(DateTimeUtil.yearMonthKey(m)),
+                envelopeMode = settings.envelopeMode.first(),
             )
         )
     }

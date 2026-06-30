@@ -36,9 +36,18 @@ class CategorizerStore @Inject constructor(
         }
     }
 
-    private fun key(label: String) = stringPreferencesKey("lbl_$label")
+    override suspend fun allLearned(): Map<String, Map<Long, Int>> {
+        val all = context.categorizerDataStore.data.first()
+        return all.asMap().entries
+            .filter { it.key.name.startsWith(PREFIX) && it.value is String }
+            .associate { it.key.name.removePrefix(PREFIX) to decode(it.value as String) }
+    }
+
+    private fun key(label: String) = stringPreferencesKey("$PREFIX$label")
 
     companion object {
+        private const val PREFIX = "lbl_"
+
         fun encode(counts: Map<Long, Int>): String =
             counts.entries.joinToString(",") { "${it.key}:${it.value}" }
 

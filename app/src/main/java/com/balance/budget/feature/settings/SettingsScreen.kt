@@ -17,15 +17,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.balance.budget.core.ui.components.PressScale
@@ -38,10 +44,31 @@ fun SettingsScreen(
     onNavigateToRecurring: () -> Unit,
     onNavigateToImportReview: () -> Unit,
     onNavigateToCategories: () -> Unit,
+    onNavigateToAccounts: () -> Unit,
+    onNavigateToTags: () -> Unit,
+    onNavigateToRules: () -> Unit,
+    onNavigateToBills: () -> Unit,
+    onNavigateToGoals: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // POST_NOTIFICATIONS (Android 13+): only enable nudges if the user grants it.
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> viewModel.setProactiveNudges(granted) }
+    val onToggleNudges: (Boolean) -> Unit = { want ->
+        if (!want) {
+            viewModel.setProactiveNudges(false)
+        } else if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.setProactiveNudges(true)
+        }
+    }
 
     // Fire the system share sheet when an export file is ready.
     LaunchedEffect(Unit) {
@@ -77,13 +104,24 @@ fun SettingsScreen(
         SectionLabel("Budget")
         NavRow("Budgets & limits", "Set your monthly and per-category budgets", onNavigateToBudgets)
         NavRow("Manage categories", "Add, rename, recolour, reorder or archive", onNavigateToCategories)
+        NavRow("Accounts & wallets", "Cash, bank, UPI, card — set which Quick Add picks", onNavigateToAccounts)
+        NavRow("Tags & trip recap", "Label expenses across categories; see a per-tag recap", onNavigateToTags)
+        NavRow("Auto-categorize rules", "Teach Balance to pre-pick a category by merchant or note", onNavigateToRules)
         ToggleRow(
             title = "Roll over unspent budget",
             subtitle = "Unspent category budget carries into next month and feeds safe-to-spend",
             checked = state.rolloverEnabled,
             onChange = viewModel::setRolloverEnabled,
         )
+        ToggleRow(
+            title = "Envelope mode",
+            subtitle = "Zero-based: safe-to-spend is the sum of your unspent category envelopes",
+            checked = state.envelopeMode,
+            onChange = viewModel::setEnvelopeMode,
+        )
         NavRow("Recurring expenses", "Rent, subscriptions, bills — reserved from safe-to-spend", onNavigateToRecurring)
+        NavRow("Bills & subscriptions", "Monthly total and an upcoming-bills timeline", onNavigateToBills)
+        NavRow("Savings goals", "Set aside for a trip, a fund, a treat — track progress", onNavigateToGoals)
 
         SectionLabel("Appearance")
         Text(
@@ -115,6 +153,14 @@ fun SettingsScreen(
             subtitle = "Off by default. Only ever sends anonymized totals, never your transactions.",
             checked = state.aiCloud,
             onChange = viewModel::setAiCloud,
+        )
+
+        SectionLabel("Notifications")
+        ToggleRow(
+            title = "Proactive nudges",
+            subtitle = "A gentle heads-up if you go over budget or spend unusually. Calm, never spammy.",
+            checked = state.proactiveNudges,
+            onChange = onToggleNudges,
         )
 
         SectionLabel("Capture")

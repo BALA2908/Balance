@@ -6,6 +6,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.balance.budget.data.local.BudgetDatabase
 import com.balance.budget.data.local.MIGRATION_1_2
 import com.balance.budget.data.local.MIGRATION_2_3
+import com.balance.budget.data.local.MIGRATION_3_4
+import com.balance.budget.data.local.MIGRATION_4_5
+import com.balance.budget.data.local.MIGRATION_5_6
+import com.balance.budget.data.local.MIGRATION_6_7
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -138,6 +142,104 @@ class MigrationTest {
         }
         db.query("SELECT COUNT(*) FROM budget_adjustments").use { c ->
             assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM categories WHERE name = 'Sports'").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(1, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate3To4_addsAccountsAndBackfillsExpensesToCash() {
+        // Seed a v3 install with a category and an expense (no account_id yet).
+        helper.createDatabase(dbName, 3).apply {
+            execSQL(
+                "INSERT INTO categories (id, name, icon_key, color_hex, is_default, is_archived, sort_order) " +
+                    "VALUES (1, 'Food', 'food', '#E0795B', 1, 0, 0)"
+            )
+            execSQL(
+                "INSERT INTO expenses (id, amount_minor, category_id, note, timestamp, created_at, source, merchant) " +
+                    "VALUES (1, 15000, 1, 'Lunch', 1700000000000, 1700000000000, 'MANUAL', NULL)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+
+        // The four default wallets were seeded, with exactly one default = Cash.
+        db.query("SELECT COUNT(*) FROM accounts").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(4, c.getInt(0))
+        }
+        var cashId = -1L
+        db.query("SELECT id, name FROM accounts WHERE is_default = 1").use { c ->
+            assertEquals(1, c.count)
+            assertTrue(c.moveToFirst())
+            cashId = c.getLong(0)
+            assertEquals("Cash", c.getString(1))
+        }
+        // The existing expense survived and was back-filled to Cash.
+        db.query("SELECT amount_minor, account_id FROM expenses WHERE id = 1").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(15000L, c.getLong(0))
+            assertEquals(cashId, c.getLong(1))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate4To5_addsTagTables() {
+        helper.createDatabase(dbName, 4).close()
+        val db = helper.runMigrationsAndValidate(dbName, 5, true, MIGRATION_4_5)
+        db.query("SELECT COUNT(*) FROM tags").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM expense_tags").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate5To6_addsRulesTable() {
+        helper.createDatabase(dbName, 5).close()
+        val db = helper.runMigrationsAndValidate(dbName, 6, true, MIGRATION_5_6)
+        db.query("SELECT COUNT(*) FROM category_rules").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate6To7_addsSavingsGoals() {
+        helper.createDatabase(dbName, 6).close()
+        val db = helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7)
+        db.query("SELECT COUNT(*) FROM savings_goals").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrateAll_1To4_chained() {
+        helper.createDatabase(dbName, 1).apply {
+            execSQL(
+                "INSERT INTO categories (id, name, icon_key, color_hex, is_default, is_archived, sort_order) " +
+                    "VALUES (1, 'Food', 'food', '#E0795B', 1, 0, 0)"
+            )
+            execSQL(
+                "INSERT INTO expenses (id, amount_minor, category_id, note, timestamp, created_at, source, merchant) " +
+                    "VALUES (1, 9900, 1, NULL, 1700000000000, 1700000000000, 'MANUAL', NULL)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+
+        db.query("SELECT COUNT(*) FROM accounts").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(4, c.getInt(0))
+        }
+        db.query("SELECT account_id FROM expenses WHERE id = 1").use { c ->
+            assertTrue(c.moveToFirst()); assertTrue(c.getLong(0) > 0)
         }
         db.query("SELECT COUNT(*) FROM categories WHERE name = 'Sports'").use { c ->
             assertTrue(c.moveToFirst()); assertEquals(1, c.getInt(0))

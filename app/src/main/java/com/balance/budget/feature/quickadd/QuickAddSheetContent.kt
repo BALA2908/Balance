@@ -106,6 +106,22 @@ fun QuickAddSheetContent(
                     onSelect = viewModel::selectCategory,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (state.accounts.size > 1) {
+                    AccountChipRow(
+                        accounts = state.accounts,
+                        selectedId = state.selectedAccountId,
+                        onSelect = viewModel::selectAccount,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (state.tags.isNotEmpty()) {
+                    TagChipRow(
+                        tags = state.tags,
+                        selectedIds = state.selectedTagIds,
+                        onToggle = viewModel::toggleTag,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 OutlinedTextField(
                     value = state.note,
                     onValueChange = viewModel::setNote,

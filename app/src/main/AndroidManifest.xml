@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Proactive nudges (opt-in). Runtime-requested on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".BudgetApp"
         android:allowBackup="false"
@@ -97,6 +100,19 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_safe_to_spend_info" />
         </receiver>
+
+        <!-- Hilt provides the WorkManager configuration (HiltWorkerFactory), so we
+             disable the default on-startup initializer. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <!-- Shares exported CSV/PDF files from the app cache. -->
         <provider

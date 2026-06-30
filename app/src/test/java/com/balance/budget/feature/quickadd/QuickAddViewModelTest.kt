@@ -1,12 +1,21 @@
 package com.balance.budget.feature.quickadd
 
 import com.balance.budget.data.categorize.Categorizer
+import com.balance.budget.data.categorize.CategoryResolver
 import com.balance.budget.data.categorize.LabelCountStore
+import com.balance.budget.data.repository.CategoryRuleRepository
+import com.balance.budget.data.local.entity.AccountEntity
 import com.balance.budget.data.local.entity.CategoryEntity
+import com.balance.budget.data.repository.AccountRepository
 import com.balance.budget.data.repository.CategoryRepository
 import com.balance.budget.data.repository.ExpenseRepository
+import com.balance.budget.data.repository.TagRepository
+import com.balance.budget.domain.model.AccountType
+import com.balance.budget.fakes.FakeAccountDao
 import com.balance.budget.fakes.FakeCategoryDao
+import com.balance.budget.fakes.FakeCategoryRuleDao
 import com.balance.budget.fakes.FakeExpenseDao
+import com.balance.budget.fakes.FakeTagDao
 import com.balance.budget.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -32,10 +41,19 @@ class QuickAddViewModelTest {
             )
         )
         val expenseDao = FakeExpenseDao(categoryDao)
+        val accountDao = FakeAccountDao(
+            listOf(
+                AccountEntity(id = 1, name = "Cash", type = AccountType.CASH, iconKey = "cash", colorHex = "#8FB996", isDefault = true),
+            )
+        )
+        val categorizer = Categorizer(InMemoryLabelCountStore())
         val vm = QuickAddViewModel(
             expenseRepository = ExpenseRepository(expenseDao, clock = { fixedNow }),
             categoryRepository = CategoryRepository(categoryDao),
-            categorizer = Categorizer(InMemoryLabelCountStore()),
+            accountRepository = AccountRepository(accountDao),
+            tagRepository = TagRepository(FakeTagDao()),
+            categorizer = categorizer,
+            categoryResolver = CategoryResolver(CategoryRuleRepository(FakeCategoryRuleDao()), categorizer),
             clock = { fixedNow },
         )
         return vm to expenseDao
@@ -88,6 +106,7 @@ class QuickAddViewModelTest {
         assertEquals(2L, saved.categoryId)
         assertEquals("Auto rickshaw", saved.note) // trimmed
         assertEquals(fixedNow, saved.timestamp)
+        assertEquals(1L, saved.accountId) // defaulted to the Cash wallet
         assertTrue(vm.state.value.saved)
     }
 }
