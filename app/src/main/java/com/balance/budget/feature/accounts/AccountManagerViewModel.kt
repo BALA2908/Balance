@@ -41,7 +41,7 @@ class AccountManagerViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountManagerUiState())
 
-    fun create(name: String, type: AccountType, iconKey: String, colorHex: String) = viewModelScope.launch {
+    fun create(name: String, type: AccountType, iconKey: String, colorHex: String, balanceMinor: Long?) = viewModelScope.launch {
         val cleaned = name.trim()
         if (cleaned.isEmpty()) return@launch
         accountRepository.add(
@@ -51,7 +51,7 @@ class AccountManagerViewModel @Inject constructor(
                 type = type,
                 iconKey = iconKey,
                 colorHex = colorHex,
-                openingBalanceMinor = null,
+                openingBalanceMinor = balanceMinor,
                 isDefault = false,
                 isArchived = false,
                 sortOrder = accountRepository.nextSortOrder(),
@@ -59,11 +59,13 @@ class AccountManagerViewModel @Inject constructor(
         )
     }
 
-    fun save(account: Account, name: String, type: AccountType, iconKey: String, colorHex: String) =
+    fun save(account: Account, name: String, type: AccountType, iconKey: String, colorHex: String, balanceMinor: Long?) =
         viewModelScope.launch {
             val cleaned = name.trim()
             if (cleaned.isEmpty()) return@launch
-            accountRepository.update(account.copy(name = cleaned, type = type, iconKey = iconKey, colorHex = colorHex))
+            accountRepository.update(
+                account.copy(name = cleaned, type = type, iconKey = iconKey, colorHex = colorHex, openingBalanceMinor = balanceMinor),
+            )
         }
 
     fun setDefault(account: Account) = viewModelScope.launch {

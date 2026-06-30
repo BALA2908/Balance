@@ -171,10 +171,10 @@ fun AccountManagerScreen(
         AccountEditorSheet(
             initial = target.account,
             onDismiss = { editorFor = null },
-            onSave = { name, type, icon, color ->
+            onSave = { name, type, icon, color, balance ->
                 val existing = target.account
-                if (existing == null) viewModel.create(name, type, icon, color)
-                else viewModel.save(existing, name, type, icon, color)
+                if (existing == null) viewModel.create(name, type, icon, color, balance)
+                else viewModel.save(existing, name, type, icon, color, balance)
                 editorFor = null
             },
         )
@@ -274,7 +274,7 @@ private fun AccountAvatar(account: Account, dimmed: Boolean = false) {
 @Composable
 private fun AccountEditorSheet(
     initial: Account?,
-    onSave: (name: String, type: AccountType, iconKey: String, colorHex: String) -> Unit,
+    onSave: (name: String, type: AccountType, iconKey: String, colorHex: String, balanceMinor: Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -282,6 +282,10 @@ private fun AccountEditorSheet(
     var type by remember { mutableStateOf(initial?.type ?: AccountType.CASH) }
     var icon by remember { mutableStateOf(initial?.iconKey ?: AccountIconCatalog.first()) }
     var color by remember { mutableStateOf(initial?.colorHex ?: CategorySwatchHexes.first()) }
+    var balanceText by remember {
+        mutableStateOf(initial?.openingBalanceMinor?.let { com.balance.budget.core.util.Money.formatPlain(it).replace(",", "") } ?: "")
+    }
+    val balanceMinor = if (balanceText.isBlank()) null else com.balance.budget.core.util.Money.parseToMinor(balanceText)
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -300,6 +304,14 @@ private fun AccountEditorSheet(
                 label = { Text("Name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = balanceText,
+                onValueChange = { new -> balanceText = new.filter { it.isDigit() || it == '.' } },
+                label = { Text("Current balance (₹, optional)") },
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
 
             EditorLabel("Type")
@@ -355,7 +367,7 @@ private fun AccountEditorSheet(
             }
 
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, type, icon, color) },
+                onClick = { if (name.isNotBlank()) onSave(name, type, icon, color, balanceMinor) },
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             ) {

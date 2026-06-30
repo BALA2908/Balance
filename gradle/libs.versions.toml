@@ -22,6 +22,7 @@ googleFonts = "1.7.6"
 vico = "2.0.0"
 glance = "1.1.1"
 mlkitGenaiPrompt = "1.0.0-beta2"
+mlkitTextRecognition = "16.0.1"
 junit = "4.13.2"
 androidxJunit = "1.2.1"
 espresso = "3.6.1"
@@ -75,6 +76,7 @@ vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", ve
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 
 mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "mlkitGenaiPrompt" }
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
 
 # Test
 junit = { group = "junit", name = "junit", version.ref = "junit" }

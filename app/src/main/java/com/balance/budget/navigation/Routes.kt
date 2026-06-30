@@ -17,6 +17,7 @@ object Routes {
     const val RECURRING = "recurring"
     const val BILLS = "bills"
     const val GOALS = "goals"
+    const val NET_WORTH = "net_worth"
     const val ONBOARDING = "onboarding"
     const val IMPORT_REVIEW = "import_review"
     const val ASK = "ask"

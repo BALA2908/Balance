@@ -2,4 +2,6 @@
 <paths>
     <!-- Exported CSV/PDF live in cacheDir/exports and are shared via FileProvider. -->
     <cache-path name="exports" path="exports/" />
+    <!-- Receipt photos captured for OCR live in cacheDir/receipts. -->
+    <cache-path name="receipts" path="receipts/" />
 </paths>

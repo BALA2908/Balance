@@ -30,6 +30,7 @@ import com.balance.budget.feature.tags.TagManagerScreen
 import com.balance.budget.feature.rules.RulesScreen
 import com.balance.budget.feature.bills.BillsScreen
 import com.balance.budget.feature.goals.SavingsGoalsScreen
+import com.balance.budget.feature.networth.NetWorthScreen
 import com.balance.budget.feature.assistant.AskScreen
 import com.balance.budget.feature.dashboard.DashboardScreen
 import com.balance.budget.feature.history.HistoryScreen
@@ -123,6 +124,7 @@ fun AppScaffold() {
                     onNavigateToRules = { navController.navigate(Routes.RULES) },
                     onNavigateToBills = { navController.navigate(Routes.BILLS) },
                     onNavigateToGoals = { navController.navigate(Routes.GOALS) },
+                    onNavigateToNetWorth = { navController.navigate(Routes.NET_WORTH) },
                 )
             }
             composable(Routes.BUDGETS) {
@@ -164,6 +166,12 @@ fun AppScaffold() {
             }
             composable(Routes.GOALS) {
                 SavingsGoalsScreen(
+                    contentPadding = padding,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.NET_WORTH) {
+                NetWorthScreen(
                     contentPadding = padding,
                     onBack = { navController.popBackStack() },
                 )

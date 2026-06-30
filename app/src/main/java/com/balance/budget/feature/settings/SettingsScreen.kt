@@ -49,6 +49,7 @@ fun SettingsScreen(
     onNavigateToRules: () -> Unit,
     onNavigateToBills: () -> Unit,
     onNavigateToGoals: () -> Unit,
+    onNavigateToNetWorth: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -122,6 +123,7 @@ fun SettingsScreen(
         NavRow("Recurring expenses", "Rent, subscriptions, bills — reserved from safe-to-spend", onNavigateToRecurring)
         NavRow("Bills & subscriptions", "Monthly total and an upcoming-bills timeline", onNavigateToBills)
         NavRow("Savings goals", "Set aside for a trip, a fund, a treat — track progress", onNavigateToGoals)
+        NavRow("Net worth", "Wallet balances and your net worth over time", onNavigateToNetWorth)
 
         SectionLabel("Appearance")
         Text(

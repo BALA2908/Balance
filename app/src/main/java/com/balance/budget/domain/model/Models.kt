@@ -43,6 +43,12 @@ data class CategoryRule(
     val sortOrder: Int,
 )
 
+data class BalanceSnapshot(
+    val id: Long,
+    val recordedAt: Long,
+    val netWorthMinor: Long,
+)
+
 data class SavingsGoal(
     val id: Long,
     val name: String,

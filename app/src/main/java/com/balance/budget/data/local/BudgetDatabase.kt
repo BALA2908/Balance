@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.balance.budget.data.local.dao.AccountDao
+import com.balance.budget.data.local.dao.BalanceSnapshotDao
 import com.balance.budget.data.local.dao.BudgetAdjustmentDao
 import com.balance.budget.data.local.dao.BudgetDao
 import com.balance.budget.data.local.dao.CategoryDao
@@ -14,6 +15,7 @@ import com.balance.budget.data.local.dao.RecurringDao
 import com.balance.budget.data.local.dao.SavingsGoalDao
 import com.balance.budget.data.local.dao.TagDao
 import com.balance.budget.data.local.entity.AccountEntity
+import com.balance.budget.data.local.entity.BalanceSnapshotEntity
 import com.balance.budget.data.local.entity.BudgetAdjustmentEntity
 import com.balance.budget.data.local.entity.BudgetEntity
 import com.balance.budget.data.local.entity.CategoryEntity
@@ -38,8 +40,9 @@ import com.balance.budget.data.local.entity.TagEntity
         ExpenseTagEntity::class,
         CategoryRuleEntity::class,
         SavingsGoalEntity::class,
+        BalanceSnapshotEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -54,6 +57,7 @@ abstract class BudgetDatabase : RoomDatabase() {
     abstract fun tagDao(): TagDao
     abstract fun categoryRuleDao(): CategoryRuleDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun balanceSnapshotDao(): BalanceSnapshotDao
 
     companion object {
         const val NAME = "balance.db"

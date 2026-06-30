@@ -120,6 +120,9 @@ dependencies {
     // Requires Kotlin 2.2.x (the genai-* artifacts ship 2.2.0 metadata).
     implementation(libs.mlkit.genai.prompt)
 
+    // On-device receipt OCR (Latin text recognition, bundled model).
+    implementation(libs.mlkit.text.recognition)
+
     // Unit tests
     testImplementation(libs.junit)
     testImplementation(libs.turbine)

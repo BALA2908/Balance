@@ -108,6 +108,12 @@ fun DashboardScreen(
                 )
             }
 
+            item {
+                com.balance.budget.feature.receipt.ScanReceiptButton(
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
             if (snapshot.topCategories.isNotEmpty()) {
                 item { SectionHeader("Where it went", Modifier.padding(top = 16.dp, bottom = 4.dp)) }
                 item {

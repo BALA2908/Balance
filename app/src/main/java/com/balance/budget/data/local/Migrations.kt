@@ -172,3 +172,15 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         )
     }
 }
+
+/** v7 → v8: net-worth snapshots for the wealth-view trend chart (additive). */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `account_balance_snapshots` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`recorded_at` INTEGER NOT NULL, " +
+                "`net_worth_minor` INTEGER NOT NULL)"
+        )
+    }
+}

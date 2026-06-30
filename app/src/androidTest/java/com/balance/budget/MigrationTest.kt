@@ -10,6 +10,7 @@ import com.balance.budget.data.local.MIGRATION_3_4
 import com.balance.budget.data.local.MIGRATION_4_5
 import com.balance.budget.data.local.MIGRATION_5_6
 import com.balance.budget.data.local.MIGRATION_6_7
+import com.balance.budget.data.local.MIGRATION_7_8
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -214,6 +215,16 @@ class MigrationTest {
         helper.createDatabase(dbName, 6).close()
         val db = helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7)
         db.query("SELECT COUNT(*) FROM savings_goals").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate7To8_addsBalanceSnapshots() {
+        helper.createDatabase(dbName, 7).close()
+        val db = helper.runMigrationsAndValidate(dbName, 8, true, MIGRATION_7_8)
+        db.query("SELECT COUNT(*) FROM account_balance_snapshots").use { c ->
             assertTrue(c.moveToFirst()); assertEquals(0, c.getInt(0))
         }
         db.close()
