@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.balance.budget.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
@@ -48,6 +49,9 @@ class SettingsRepository @Inject constructor(
      *  envelopes rather than the overall budget. Default OFF. */
     val envelopeMode: Flow<Boolean> = dataStore.data.map { it[KEY_ENVELOPE] ?: false }
 
+    /** Optional monthly income (paise) for savings-rate health. null = unset (0 treated as unset). */
+    val monthlyIncomeMinor: Flow<Long?> = dataStore.data.map { it[KEY_INCOME]?.takeIf { v -> v > 0 } }
+
     suspend fun setThemeMode(mode: ThemeMode) = dataStore.edit { it[KEY_THEME_MODE] = mode.name }
     suspend fun setCurrencyCode(code: String) = dataStore.edit { it[KEY_CURRENCY] = code }
     suspend fun setAiOnDeviceEnabled(enabled: Boolean) = dataStore.edit { it[KEY_AI_ON_DEVICE] = enabled }
@@ -58,6 +62,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setRolloverEnabled(enabled: Boolean) = dataStore.edit { it[KEY_ROLLOVER] = enabled }
     suspend fun setProactiveNudges(enabled: Boolean) = dataStore.edit { it[KEY_NUDGES] = enabled }
     suspend fun setEnvelopeMode(enabled: Boolean) = dataStore.edit { it[KEY_ENVELOPE] = enabled }
+    suspend fun setMonthlyIncome(minor: Long) = dataStore.edit { it[KEY_INCOME] = minor }
 
     private companion object {
         const val DEFAULT_CURRENCY = "INR"
@@ -71,5 +76,6 @@ class SettingsRepository @Inject constructor(
         val KEY_ROLLOVER = booleanPreferencesKey("rollover_enabled")
         val KEY_NUDGES = booleanPreferencesKey("proactive_nudges")
         val KEY_ENVELOPE = booleanPreferencesKey("envelope_mode")
+        val KEY_INCOME = longPreferencesKey("monthly_income_minor")
     }
 }

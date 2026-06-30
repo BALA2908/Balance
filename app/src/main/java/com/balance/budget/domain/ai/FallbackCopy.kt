@@ -82,6 +82,22 @@ object FallbackCopy {
         }
     }
 
+    fun financialHealth(s: AnalyticsSnapshot): String {
+        val h = s.financialHealth
+            ?: return "Add your monthly income in Settings and a few expenses — your financial health will appear here. 🌱"
+        val word = when {
+            h.disciplineScore >= 80 -> "excellent"
+            h.disciplineScore >= 65 -> "solid"
+            h.disciplineScore >= 50 -> "steady"
+            else -> "finding its feet"
+        }
+        return buildString {
+            append("Your financial health is $word — ${h.disciplineScore}/100. ")
+            h.savingsRatePercent?.let { append("You're on pace to save about ${pct(it)}% of your income. ") }
+            if (h.investmentSharePercent >= 1) append("Investing is ${pct(h.investmentSharePercent)}% of your spending — every bit compounds.")
+        }.trim()
+    }
+
     fun affordability(amountMinor: Long, canAfford: Boolean, poolMinor: Long): String =
         if (canAfford) {
             "Yes — ${Money.formatWhole(amountMinor)} fits. You'd still have about ${Money.formatWhole(poolMinor - amountMinor)} flexible this month."

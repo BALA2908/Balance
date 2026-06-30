@@ -6,9 +6,13 @@ import androidx.work.Configuration
 import com.balance.budget.data.di.ApplicationScope
 import com.balance.budget.data.repository.AccountRepository
 import com.balance.budget.data.repository.CategoryRepository
+import com.balance.budget.data.repository.ExpenseRepository
 import com.balance.budget.data.repository.RecurringMaterializerRunner
+import androidx.glance.appwidget.updateAll
+import com.balance.budget.widget.SafeToSpendWidget
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +28,7 @@ class BudgetApp : Application(), Configuration.Provider {
 
     @Inject lateinit var categoryRepository: CategoryRepository
     @Inject lateinit var accountRepository: AccountRepository
+    @Inject lateinit var expenseRepository: ExpenseRepository
     @Inject lateinit var recurringMaterializer: RecurringMaterializerRunner
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject @ApplicationScope lateinit var appScope: CoroutineScope
@@ -38,6 +43,13 @@ class BudgetApp : Application(), Configuration.Provider {
             accountRepository.ensureSeeded()
             // Generate any due recurring expenses (idempotent; catches up missed periods).
             runCatching { recurringMaterializer.run() }
+        }
+        // Keep the home-screen widget fresh: refresh whenever the expense count
+        // changes (add/delete). Drop the initial emission so we don't update on boot.
+        appScope.launch {
+            expenseRepository.observeCount().drop(1).collect {
+                runCatching { SafeToSpendWidget().updateAll(this@BudgetApp) }
+            }
         }
     }
 }

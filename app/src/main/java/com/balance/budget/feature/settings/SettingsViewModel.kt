@@ -26,6 +26,7 @@ data class SettingsUiState(
     val rolloverEnabled: Boolean = false,
     val proactiveNudges: Boolean = false,
     val envelopeMode: Boolean = false,
+    val monthlyIncomeMinor: Long? = null,
 )
 
 @HiltViewModel
@@ -58,8 +59,9 @@ class SettingsViewModel @Inject constructor(
         settings.rolloverEnabled,
         settings.proactiveNudges,
         settings.envelopeMode,
-    ) { base, rollover, nudges, envelope ->
-        base.copy(rolloverEnabled = rollover, proactiveNudges = nudges, envelopeMode = envelope)
+        settings.monthlyIncomeMinor,
+    ) { base, rollover, nudges, envelope, income ->
+        base.copy(rolloverEnabled = rollover, proactiveNudges = nudges, envelopeMode = envelope, monthlyIncomeMinor = income)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
@@ -73,6 +75,7 @@ class SettingsViewModel @Inject constructor(
         nudgeScheduler.setEnabled(on)
     }
     fun setEnvelopeMode(on: Boolean) = viewModelScope.launch { settings.setEnvelopeMode(on) }
+    fun setMonthlyIncome(minor: Long) = viewModelScope.launch { settings.setMonthlyIncome(minor) }
 
     fun exportCsv() = export { exportManager.exportCsv() }
     fun exportPdf() = export { exportManager.exportPdf() }

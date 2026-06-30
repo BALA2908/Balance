@@ -1,5 +1,12 @@
 package com.balance.budget.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -40,6 +47,7 @@ import com.balance.budget.feature.quickadd.QuickAddBottomSheet
 import com.balance.budget.feature.recurring.RecurringScreen
 import com.balance.budget.feature.reports.ReportsScreen
 import com.balance.budget.feature.settings.SettingsScreen
+import com.balance.budget.core.ui.theme.Motion
 
 /**
  * The single app shell: one Scaffold owning the bottom nav and the ＋ FAB (shown
@@ -48,7 +56,7 @@ import com.balance.budget.feature.settings.SettingsScreen
  * save path. Pushed routes (Budgets) hide the bottom bar and draw their own back.
  */
 @Composable
-fun AppScaffold() {
+fun AppScaffold(reduceMotion: Boolean = false) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -97,7 +105,27 @@ fun AppScaffold() {
             }
         },
     ) { padding ->
-        NavHost(navController = navController, startDestination = Routes.DASHBOARD) {
+        // Calm cross-screen motion: a soft fade + slight horizontal glide. Reduce-
+        // motion turns it off entirely (instant).
+        val slide = Motion.NAV_MS
+        NavHost(
+            navController = navController,
+            startDestination = Routes.DASHBOARD,
+            enterTransition = {
+                if (reduceMotion) EnterTransition.None
+                else fadeIn(tween(slide)) + slideInHorizontally(tween(slide)) { it / 16 }
+            },
+            exitTransition = {
+                if (reduceMotion) ExitTransition.None else fadeOut(tween(slide))
+            },
+            popEnterTransition = {
+                if (reduceMotion) EnterTransition.None
+                else fadeIn(tween(slide)) + slideInHorizontally(tween(slide)) { -it / 16 }
+            },
+            popExitTransition = {
+                if (reduceMotion) ExitTransition.None else fadeOut(tween(slide))
+            },
+        ) {
             composable(Routes.DASHBOARD) {
                 DashboardScreen(
                     contentPadding = padding,

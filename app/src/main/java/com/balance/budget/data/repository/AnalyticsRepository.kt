@@ -63,8 +63,11 @@ class AnalyticsRepository @Inject constructor(
         val recurringTotal: Long,
         val enabled: Boolean,
         val envelope: Boolean,
+        val income: Long?,
         val adjustments: List<BudgetAdjustment>,
     )
+
+    private data class Flags(val rollover: Boolean, val envelope: Boolean, val income: Long?)
 
     val snapshot: StateFlow<AnalyticsSnapshot> = combine(
         // Group A — this month's raw material (5 flows = combine's typed limit).
@@ -82,11 +85,13 @@ class AnalyticsRepository @Inject constructor(
             budgetRepository.observeCategoryBudgets(prevMonth),
             budgetRepository.observeOverallBudget(prevMonth),
             recurringRepository.observeActiveTotal(),
-            // Fold both budgeting flags into one slot to stay within combine's arity.
-            combine(settings.rolloverEnabled, settings.envelopeMode) { r, e -> r to e },
+            // Fold the budgeting flags + optional income into one slot (combine arity).
+            combine(settings.rolloverEnabled, settings.envelopeMode, settings.monthlyIncomeMinor) { r, e, inc ->
+                Flags(r, e, inc)
+            },
             budgetAdjustmentRepository.observeForMonth(monthKey),
         ) { prevCatBudgets, prevOverall, recurringTotal, flags, adjustments ->
-            Rollover(prevCatBudgets, prevOverall, recurringTotal, flags.first, flags.second, adjustments)
+            Rollover(prevCatBudgets, prevOverall, recurringTotal, flags.rollover, flags.envelope, flags.income, adjustments)
         },
     ) { core, roll ->
         val recurringPaid = core.monthExpenses
@@ -107,6 +112,7 @@ class AnalyticsRepository @Inject constructor(
                 prevCategoryBudgetsMinor = roll.prevCategoryBudgets.toAmountMap(),
                 monthAdjustments = roll.adjustments,
                 envelopeMode = roll.envelope,
+                monthlyIncomeMinor = roll.income,
             )
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5_000), AnalyticsSnapshot.empty(month))
@@ -141,6 +147,7 @@ class AnalyticsRepository @Inject constructor(
                 prevCategoryBudgetsMinor = budgetRepository.observeCategoryBudgets(prev).first().toAmountMap(),
                 monthAdjustments = budgetAdjustmentRepository.getForMonth(DateTimeUtil.yearMonthKey(m)),
                 envelopeMode = settings.envelopeMode.first(),
+                monthlyIncomeMinor = settings.monthlyIncomeMinor.first(),
             )
         )
     }

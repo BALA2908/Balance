@@ -38,6 +38,7 @@ import com.balance.budget.core.ui.theme.HeroAmountStyle
 import com.balance.budget.core.util.DateTimeUtil
 import com.balance.budget.core.util.Money
 import com.balance.budget.domain.analytics.AnalyticsSnapshot
+import com.balance.budget.domain.analytics.MicrocopySelector
 import com.balance.budget.domain.model.BudgetState
 import kotlin.math.roundToInt
 
@@ -82,6 +83,16 @@ fun DashboardScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 28.dp, bottom = 4.dp),
                 )
+                // One quiet, day-seeded motivational line (or nothing). Never a nag.
+                val dayKey = remember { java.time.LocalDate.now().toEpochDay().toInt() }
+                MicrocopySelector.lineFor(snapshot, dayKey)?.let { line ->
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
             }
 
             item {

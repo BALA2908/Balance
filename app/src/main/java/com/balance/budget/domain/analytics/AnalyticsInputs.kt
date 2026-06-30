@@ -35,6 +35,8 @@ data class AnalyticsInputs(
     val monthAdjustments: List<BudgetAdjustment> = emptyList(),
     /** Envelope (zero-based) mode: safe-to-spend uses the sum of category envelopes. */
     val envelopeMode: Boolean = false,
+    /** Optional monthly income (paise); null/0 = unset. Powers savings-rate health. */
+    val monthlyIncomeMinor: Long? = null,
 )
 
 /**

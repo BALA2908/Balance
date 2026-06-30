@@ -70,6 +70,16 @@ object PromptBuilder {
         appendLine("Week-over-week spend is ${trendWord(s.weekOverWeek.direction, s.weekOverWeek.percentChange)}.")
     }.trim()
 
+    /** Facts for the financial-health summary (Coach role). Aggregates only. */
+    fun financialHealthFacts(s: AnalyticsSnapshot): String = buildString {
+        val h = s.financialHealth ?: return ""
+        appendLine("Financial health score: ${h.disciplineScore} out of 100.")
+        h.savingsRatePercent?.let { appendLine("Projected savings rate: ${pct(it)}% of income.") }
+        appendLine("Investing is ${pct(h.investmentSharePercent)}% of spending.")
+        h.recurringBurdenPercent?.let { appendLine("Recurring bills are ${pct(it)}% of income.") }
+        appendLine("Stayed under budget on ${pct(h.budgetAdherencePercent)}% of days so far.")
+    }.trim()
+
     /**
      * Facts for a yes/no affordability question. The verdict is computed
      * deterministically by [AgentService] and passed in — the AI only phrases it.

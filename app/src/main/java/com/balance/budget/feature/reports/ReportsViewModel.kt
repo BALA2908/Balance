@@ -25,6 +25,7 @@ data class ReportsUiState(
     val dailyCumulative: List<Long>,
     val summary: AiText,
     val tips: AiText,
+    val health: AiText,
     val reduceMotion: Boolean,
     val isLoading: Boolean,
 )
@@ -57,6 +58,7 @@ class ReportsViewModel @Inject constructor(
                 dailyCumulative = TrendAnalytics.dailyCumulative(monthExpenses, snapshot.month, clock()),
                 summary = agentService.analystSummary(snapshot),
                 tips = agentService.advisorTips(snapshot),
+                health = agentService.financialHealth(snapshot),
                 reduceMotion = reduceMotion,
                 isLoading = false,
             )
@@ -69,6 +71,7 @@ class ReportsViewModel @Inject constructor(
                 dailyCumulative = emptyList(),
                 summary = AiText.deterministic(""),
                 tips = AiText.deterministic(""),
+                health = AiText.deterministic(""),
                 reduceMotion = false,
                 isLoading = true,
             ),

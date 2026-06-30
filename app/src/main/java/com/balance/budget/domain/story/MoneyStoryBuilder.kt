@@ -88,6 +88,17 @@ object MoneyStoryBuilder {
             )
         }
 
+        snapshot.financialHealth?.let { h ->
+            val body = h.savingsRatePercent?.let {
+                "On pace to save about ${it.roundToInt()}% this month — that's how wealth quietly grows. 🌱"
+            } ?: if (h.investmentSharePercent >= 1) {
+                "Investing ${h.investmentSharePercent.roundToInt()}% of your spend — small, steady habits compound. 🌱"
+            } else {
+                "Every mindful choice is a brick in something bigger. You're building it. 🌱"
+            }
+            cards += StoryCard("🚀", "Building wealth", null, body, SAGE)
+        }
+
         narration?.takeIf { it.isNotBlank() }?.let {
             cards += StoryCard("✨", "In a sentence", null, it, AMBER)
         }

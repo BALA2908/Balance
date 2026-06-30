@@ -48,6 +48,15 @@ class AgentService @Inject constructor(
         return ai?.let { AiText(it, AiTextSource.ON_DEVICE) } ?: AiText.deterministic(FallbackCopy.forecast(s))
     }
 
+    /** Warm 2-sentence financial-health summary (Coach role). Numbers from the engine. */
+    suspend fun financialHealth(s: AnalyticsSnapshot): AiText {
+        if (s.financialHealth == null) return AiText.deterministic(FallbackCopy.financialHealth(s))
+        val instruction = "You are a warm, encouraging money coach. In 2 short sentences, summarize this " +
+            "financial health positively and motivate gently. Use ONLY these facts; never shame."
+        val ai = callProvider(summarize = false, instruction = instruction, facts = PromptBuilder.financialHealthFacts(s))
+        return ai?.let { AiText(it, AiTextSource.ON_DEVICE) } ?: AiText.deterministic(FallbackCopy.financialHealth(s))
+    }
+
     /**
      * Answers an affordability question. The yes/no verdict and the figures are
      * computed HERE (deterministically); the model may only rephrase.

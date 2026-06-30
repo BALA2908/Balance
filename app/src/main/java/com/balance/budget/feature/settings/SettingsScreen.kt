@@ -28,13 +28,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.balance.budget.core.ui.components.AmountEntrySheet
 import com.balance.budget.core.ui.components.PressScale
+import com.balance.budget.core.util.Money
 import com.balance.budget.domain.model.ThemeMode
 
 @Composable
@@ -54,6 +59,7 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    var showIncomeSheet by remember { mutableStateOf(false) }
 
     // POST_NOTIFICATIONS (Android 13+): only enable nudges if the user grants it.
     val notifPermissionLauncher = rememberLauncherForActivityResult(
@@ -104,6 +110,11 @@ fun SettingsScreen(
 
         SectionLabel("Budget")
         NavRow("Budgets & limits", "Set your monthly and per-category budgets", onNavigateToBudgets)
+        NavRow(
+            "Monthly income (optional)",
+            state.monthlyIncomeMinor?.let { "${Money.formatWhole(it)} — powers your savings rate & financial health" }
+                ?: "Add it to unlock savings rate & financial-health insights",
+        ) { showIncomeSheet = true }
         NavRow("Manage categories", "Add, rename, recolour, reorder or archive", onNavigateToCategories)
         NavRow("Accounts & wallets", "Cash, bank, UPI, card — set which Quick Add picks", onNavigateToAccounts)
         NavRow("Tags & trip recap", "Label expenses across categories; see a per-tag recap", onNavigateToTags)
@@ -197,6 +208,16 @@ fun SettingsScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 8.dp),
+        )
+    }
+
+    if (showIncomeSheet) {
+        AmountEntrySheet(
+            title = "Monthly income",
+            initialMinor = state.monthlyIncomeMinor,
+            saveLabel = "Save",
+            onSave = { viewModel.setMonthlyIncome(it); showIncomeSheet = false },
+            onDismiss = { showIncomeSheet = false },
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,11 +29,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.balance.budget.core.ui.components.parseColor
+import com.balance.budget.core.ui.theme.CozyColors
 import com.balance.budget.core.util.DateTimeUtil
 import com.balance.budget.core.util.Money
 import com.balance.budget.domain.ai.AiText
 import com.balance.budget.domain.ai.AiTextSource
 import com.balance.budget.domain.analytics.AnalyticsSnapshot
+import com.balance.budget.domain.analytics.FinancialHealth
 import com.balance.budget.domain.analytics.SpendingPersonality
 import com.balance.budget.domain.analytics.TrendDirection
 import com.balance.budget.feature.reports.charts.CategoryDonut
@@ -183,6 +186,13 @@ fun ReportsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // Financial health (deterministic score + recommendations; AI-phrased intro)
+        s.financialHealth?.let { h ->
+            SectionTitle("Financial health")
+            FinancialHealthCard(h, state.health, modifier = Modifier.padding(top = 8.dp))
+            Spacer(Modifier.height(16.dp))
+        }
+
         // Spending personality (deterministic archetype)
         SpendingPersonality.from(s)?.let { p ->
             SectionTitle("Your spending personality")
@@ -281,6 +291,70 @@ private fun AiCard(title: String?, body: AiText, modifier: Modifier = Modifier) 
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+        }
+    }
+}
+
+@Composable
+private fun FinancialHealthCard(h: FinancialHealth, intro: AiText, modifier: Modifier = Modifier) {
+    val tint = when {
+        h.disciplineScore >= 65 -> CozyColors.Sage
+        h.disciplineScore >= 50 -> CozyColors.Honey
+        else -> CozyColors.Clay
+    }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (intro.text.isNotBlank()) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        text = intro.text,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (intro.source != AiTextSource.DETERMINISTIC) {
+                        Text("✨ AI", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
+            // Score bar
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Discipline", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                Text("${h.disciplineScore}/100", style = MaterialTheme.typography.titleMedium, color = tint)
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth().height(8.dp).padding(top = 6.dp)
+                    .clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth((h.disciplineScore / 100f).coerceIn(0f, 1f)).height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)).background(tint),
+                )
+            }
+            // Metric line
+            val metrics = buildList {
+                add("Investing ${h.investmentSharePercent.roundToInt()}%")
+                h.savingsRatePercent?.let { add("Saving ${it.roundToInt()}%") }
+                if (h.budgetAdherencePercent > 0) add("Under budget ${h.budgetAdherencePercent.roundToInt()}% of days")
+            }.joinToString("  ·  ")
+            Text(
+                text = metrics,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            // Recommendations
+            h.recommendations.forEach { rec ->
+                Row(modifier = Modifier.padding(top = 10.dp), verticalAlignment = Alignment.Top) {
+                    Text("•", color = tint, modifier = Modifier.padding(end = 8.dp))
+                    Text(rec, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground)
+                }
+            }
         }
     }
 }

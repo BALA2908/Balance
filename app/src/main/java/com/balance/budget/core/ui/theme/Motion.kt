@@ -38,5 +38,10 @@ object Motion {
     /** Charts draw in over this duration (used from Phase 3). */
     fun <T> chartDraw(): AnimationSpec<T> = tween(durationMillis = 750, easing = FastOutSlowInEasing)
 
+    /** App-open entrance duration — a calm fade + rise. */
+    const val SCREEN_ENTER_MS = 420
+
+    /** Navigation transition timing between destinations. */
+    const val NAV_MS = 280
     const val COUNT_UP_MS = 900
 }

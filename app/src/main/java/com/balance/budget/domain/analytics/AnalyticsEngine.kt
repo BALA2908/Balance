@@ -81,7 +81,7 @@ object AnalyticsEngine {
         val streaks = streaks(inputs.monthExpenses, inputs.overallBudgetMinor, today, month, zone)
         val anomalies = anomalies(inputs.monthExpenses)
 
-        return AnalyticsSnapshot(
+        val snapshot = AnalyticsSnapshot(
             month = month,
             monthToDateMinor = mtd,
             overallBudgetMinor = inputs.overallBudgetMinor,
@@ -100,7 +100,10 @@ object AnalyticsEngine {
             anomalies = anomalies,
             isEmpty = inputs.monthExpenses.isEmpty(),
             rolloverCarryMinor = rolloverCarry,
+            activeRecurringTotalMinor = inputs.activeRecurringTotalMinor,
         )
+        // Financial-health reads from the assembled snapshot (+ optional income).
+        return snapshot.copy(financialHealth = FinancialHealth.from(snapshot, inputs.monthlyIncomeMinor))
     }
 
     // --- pieces (internal so they can be unit-tested directly) ----------------
@@ -256,16 +259,20 @@ object AnalyticsEngine {
 
         var run = 0
         var longest = 0
+        var underDays = 0
+        val completedDays = today.dayOfMonth - 1
         for (day in 1 until today.dayOfMonth) { // completed days only
             val spend = spendByDay[day] ?: 0L
             if (spend <= dailyBudget) {
                 run++
                 longest = max(longest, run)
+                underDays++
             } else {
                 run = 0
             }
         }
-        return Streaks(currentUnderBudgetDays = run, longestUnderBudgetDays = longest)
+        val adherence = if (completedDays > 0) underDays * 100.0 / completedDays else 0.0
+        return Streaks(currentUnderBudgetDays = run, longestUnderBudgetDays = longest, adherencePercent = adherence)
     }
 
     /** Flags expenses above mean + 2σ within their category (needs ≥4 samples). */

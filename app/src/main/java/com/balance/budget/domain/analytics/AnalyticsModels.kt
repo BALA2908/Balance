@@ -88,6 +88,8 @@ data class Anomaly(
 data class Streaks(
     val currentUnderBudgetDays: Int,
     val longestUnderBudgetDays: Int,
+    /** % of completed days this month that stayed under the daily budget (0 when no budget). */
+    val adherencePercent: Double = 0.0,
 )
 
 /**
@@ -115,6 +117,11 @@ data class AnalyticsSnapshot(
     /** Total amount rolled over from last month into this month's safe-to-spend
      *  (0 when rollover is off or last month had no leftover). */
     val rolloverCarryMinor: Long = 0,
+    /** Sum of active recurring commitments (paise) — surfaced for the health view. */
+    val activeRecurringTotalMinor: Long = 0,
+    /** Financial-health evaluation (discipline, savings, investment) — null when
+     *  there's nothing meaningful to show yet. */
+    val financialHealth: FinancialHealth? = null,
 ) {
     companion object {
         /** A zeroed snapshot for a month with no data (and the initial UI state). */

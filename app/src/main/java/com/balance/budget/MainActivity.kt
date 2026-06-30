@@ -4,13 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.balance.budget.core.ui.theme.Motion
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -46,6 +54,7 @@ class MainActivity : ComponentActivity() {
 data class RootUiState(
     val themeMode: ThemeMode = ThemeMode.DARK,
     val firstLaunchComplete: Boolean = false,
+    val reduceMotion: Boolean = false,
     val loaded: Boolean = false,
 )
 
@@ -56,7 +65,8 @@ class RootViewModel @Inject constructor(
     val state: StateFlow<RootUiState> = combine(
         settings.themeMode,
         settings.firstLaunchComplete,
-    ) { theme, firstDone -> RootUiState(theme, firstDone, loaded = true) }
+        settings.reduceMotion,
+    ) { theme, firstDone, reduceMotion -> RootUiState(theme, firstDone, reduceMotion, loaded = true) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RootUiState())
 }
 
@@ -73,10 +83,21 @@ fun BalanceRoot(viewModel: RootViewModel = hiltViewModel()) {
             modifier = Modifier.fillMaxSize(),
             color = androidx.compose.material3.MaterialTheme.colorScheme.background,
         ) {
-            when {
-                !state.loaded -> Unit // brief: wait for the persisted prefs before deciding
-                !state.firstLaunchComplete -> OnboardingScreen()
-                else -> AppScaffold()
+            if (state.loaded) {
+                // Gentle app-open entrance — a calm fade + rise, the first time content
+                // appears. Honors reduce-motion (shows instantly).
+                val appeared = remember { MutableTransitionState(false).apply { targetState = true } }
+                AnimatedVisibility(
+                    visibleState = appeared,
+                    enter = if (state.reduceMotion) {
+                        EnterTransition.None
+                    } else {
+                        fadeIn(tween(Motion.SCREEN_ENTER_MS)) +
+                            slideInVertically(tween(Motion.SCREEN_ENTER_MS)) { it / 14 }
+                    },
+                ) {
+                    if (!state.firstLaunchComplete) OnboardingScreen() else AppScaffold(reduceMotion = state.reduceMotion)
+                }
             }
         }
     }
