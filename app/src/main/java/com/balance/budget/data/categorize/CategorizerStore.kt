@@ -43,6 +43,11 @@ class CategorizerStore @Inject constructor(
             .associate { it.key.name.removePrefix(PREFIX) to decode(it.value as String) }
     }
 
+    /** Forget everything learned — used by the factory reset. */
+    suspend fun clearAll() {
+        context.categorizerDataStore.edit { it.clear() }
+    }
+
     private fun key(label: String) = stringPreferencesKey("$PREFIX$label")
 
     companion object {

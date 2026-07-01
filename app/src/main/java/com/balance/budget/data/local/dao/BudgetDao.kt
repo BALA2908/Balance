@@ -51,4 +51,12 @@ interface BudgetDao {
         """
     )
     fun observeActiveCategoryBudgets(ym: Int): Flow<List<BudgetEntity>>
+
+    /** Remove every budget row (all months, overall + per-category) — a full unset. */
+    @Query("DELETE FROM budgets")
+    suspend fun deleteAll()
+
+    /** Remove every budget row for one category (all months). */
+    @Query("DELETE FROM budgets WHERE category_id = :categoryId")
+    suspend fun deleteForCategory(categoryId: Long)
 }

@@ -16,8 +16,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.balance.budget.core.ui.components.BalanceIntro
 import com.balance.budget.core.ui.theme.Motion
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,6 +81,11 @@ fun BalanceRoot(viewModel: RootViewModel = hiltViewModel()) {
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
     }
+    // Branded opening intro — shown once per cold start, over the loaded content.
+    // Skipped entirely under reduce-motion. Remembered at the activity root so it
+    // never replays on recomposition or navigation.
+    var introDone by remember { mutableStateOf(false) }
+
     BalanceTheme(darkTheme = darkTheme) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -98,6 +106,10 @@ fun BalanceRoot(viewModel: RootViewModel = hiltViewModel()) {
                 ) {
                     if (!state.firstLaunchComplete) OnboardingScreen() else AppScaffold(reduceMotion = state.reduceMotion)
                 }
+            }
+
+            if (state.loaded && !state.reduceMotion && !introDone) {
+                BalanceIntro(onFinished = { introDone = true })
             }
         }
     }

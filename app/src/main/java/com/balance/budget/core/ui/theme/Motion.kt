@@ -41,6 +41,9 @@ object Motion {
     /** App-open entrance duration — a calm fade + rise. */
     const val SCREEN_ENTER_MS = 420
 
+    /** Branded opening intro — coin + wordmark settle, then hand off to content. */
+    const val INTRO_MS = 1050
+
     /** Navigation transition timing between destinations. */
     const val NAV_MS = 280
     const val COUNT_UP_MS = 900

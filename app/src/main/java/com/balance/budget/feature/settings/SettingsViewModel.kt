@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.balance.budget.data.export.ExportManager
 import com.balance.budget.data.preferences.SettingsRepository
+import com.balance.budget.data.repository.ResetManager
 import com.balance.budget.domain.model.ThemeMode
 import com.balance.budget.notifications.NudgeScheduler
+import com.balance.budget.notifications.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,6 +29,7 @@ data class SettingsUiState(
     val proactiveNudges: Boolean = false,
     val envelopeMode: Boolean = false,
     val monthlyIncomeMinor: Long? = null,
+    val dailyReminderEnabled: Boolean = false,
 )
 
 @HiltViewModel
@@ -34,6 +37,8 @@ class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val exportManager: ExportManager,
     private val nudgeScheduler: NudgeScheduler,
+    private val reminderScheduler: ReminderScheduler,
+    private val resetManager: ResetManager,
 ) : ViewModel() {
 
     /** Emits a ready-to-share file (CSV/PDF), or an error message. */
@@ -54,14 +59,34 @@ class SettingsViewModel @Inject constructor(
         SettingsUiState(theme, reduceMotion, aiOnDevice, aiCloud, autoImport)
     }
 
-    val state: StateFlow<SettingsUiState> = combine(
-        baseState,
-        settings.rolloverEnabled,
+    // combine() tops out at five typed flows, so fold the remaining toggles into
+    // one holder first, then merge with the base state.
+    private data class Extra(
+        val nudges: Boolean,
+        val envelope: Boolean,
+        val income: Long?,
+        val dailyReminder: Boolean,
+    )
+
+    private val extra = combine(
         settings.proactiveNudges,
         settings.envelopeMode,
         settings.monthlyIncomeMinor,
-    ) { base, rollover, nudges, envelope, income ->
-        base.copy(rolloverEnabled = rollover, proactiveNudges = nudges, envelopeMode = envelope, monthlyIncomeMinor = income)
+        settings.dailyReminderEnabled,
+    ) { nudges, envelope, income, dailyReminder -> Extra(nudges, envelope, income, dailyReminder) }
+
+    val state: StateFlow<SettingsUiState> = combine(
+        baseState,
+        settings.rolloverEnabled,
+        extra,
+    ) { base, rollover, e ->
+        base.copy(
+            rolloverEnabled = rollover,
+            proactiveNudges = e.nudges,
+            envelopeMode = e.envelope,
+            monthlyIncomeMinor = e.income,
+            dailyReminderEnabled = e.dailyReminder,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
@@ -76,6 +101,19 @@ class SettingsViewModel @Inject constructor(
     }
     fun setEnvelopeMode(on: Boolean) = viewModelScope.launch { settings.setEnvelopeMode(on) }
     fun setMonthlyIncome(minor: Long) = viewModelScope.launch { settings.setMonthlyIncome(minor) }
+    fun setDailyReminder(on: Boolean) = viewModelScope.launch {
+        settings.setDailyReminderEnabled(on)
+        reminderScheduler.setEnabled(on)
+    }
+
+    /**
+     * Factory reset — erase everything and relaunch into onboarding. Destructive
+     * and irreversible; the UI confirms before calling this.
+     */
+    fun resetApp() = viewModelScope.launch {
+        resetManager.resetAll()
+        resetManager.relaunch()
+    }
 
     fun exportCsv() = export { exportManager.exportCsv() }
     fun exportPdf() = export { exportManager.exportPdf() }

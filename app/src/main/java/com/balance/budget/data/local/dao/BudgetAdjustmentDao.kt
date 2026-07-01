@@ -21,4 +21,8 @@ interface BudgetAdjustmentDao {
 
     @Query("DELETE FROM budget_adjustments WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    /** Remove every recorded move (all months) — used when clearing budgets. */
+    @Query("DELETE FROM budget_adjustments")
+    suspend fun deleteAll()
 }

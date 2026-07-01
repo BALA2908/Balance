@@ -38,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.balance.budget.core.ui.components.AmountEntrySheet
+import com.balance.budget.core.ui.components.ConfirmSheet
 import com.balance.budget.core.ui.components.PressScale
 import com.balance.budget.core.util.Money
 import com.balance.budget.domain.model.ThemeMode
@@ -60,22 +61,28 @@ fun SettingsScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     var showIncomeSheet by remember { mutableStateOf(false) }
+    var showResetConfirm by remember { mutableStateOf(false) }
 
-    // POST_NOTIFICATIONS (Android 13+): only enable nudges if the user grants it.
+    // POST_NOTIFICATIONS (Android 13+): shared by every opt-in that posts. The
+    // pending action runs with the grant result (true when already granted / <33).
+    var pendingGrant by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted -> viewModel.setProactiveNudges(granted) }
-    val onToggleNudges: (Boolean) -> Unit = { want ->
+    ) { granted -> pendingGrant?.invoke(granted); pendingGrant = null }
+    val requestNotificationThen: (Boolean, (Boolean) -> Unit) -> Unit = { want, apply ->
         if (!want) {
-            viewModel.setProactiveNudges(false)
+            apply(false)
         } else if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
+            pendingGrant = apply
             notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            viewModel.setProactiveNudges(true)
+            apply(true)
         }
     }
+    val onToggleNudges: (Boolean) -> Unit = { want -> requestNotificationThen(want) { viewModel.setProactiveNudges(it) } }
+    val onToggleReminder: (Boolean) -> Unit = { want -> requestNotificationThen(want) { viewModel.setDailyReminder(it) } }
 
     // Fire the system share sheet when an export file is ready.
     LaunchedEffect(Unit) {
@@ -175,6 +182,12 @@ fun SettingsScreen(
             checked = state.proactiveNudges,
             onChange = onToggleNudges,
         )
+        ToggleRow(
+            title = "Daily logging reminder",
+            subtitle = "A soft nudge each evening to jot down the day's spending. One tap, that's it.",
+            checked = state.dailyReminderEnabled,
+            onChange = onToggleReminder,
+        )
 
         SectionLabel("Capture")
         ToggleRow(
@@ -201,10 +214,14 @@ fun SettingsScreen(
         SectionLabel("Data")
         NavRow("Export this month (CSV)", "Open in a spreadsheet") { viewModel.exportCsv() }
         NavRow("Export this month (PDF)", "A shareable month report") { viewModel.exportPdf() }
+        NavRow(
+            "Reset app / start over",
+            "Erase everything and begin fresh — this can't be undone",
+        ) { showResetConfirm = true }
 
         SectionLabel("About")
         Text(
-            text = "Currency: ₹ (INR) · Balance 0.1.0",
+            text = "Currency: ₹ (INR) · Balance 0.2.0",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 8.dp),
@@ -218,6 +235,18 @@ fun SettingsScreen(
             saveLabel = "Save",
             onSave = { viewModel.setMonthlyIncome(it); showIncomeSheet = false },
             onDismiss = { showIncomeSheet = false },
+        )
+    }
+
+    if (showResetConfirm) {
+        ConfirmSheet(
+            title = "Reset app?",
+            body = "This permanently erases all your expenses, budgets, accounts, tags, " +
+                "goals and settings. Balance will start over from a fresh install. " +
+                "This cannot be undone.",
+            confirmLabel = "Erase everything",
+            onConfirm = { showResetConfirm = false; viewModel.resetApp() },
+            onDismiss = { showResetConfirm = false },
         )
     }
 }

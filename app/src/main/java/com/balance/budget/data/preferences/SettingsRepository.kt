@@ -64,6 +64,16 @@ class SettingsRepository @Inject constructor(
     suspend fun setEnvelopeMode(enabled: Boolean) = dataStore.edit { it[KEY_ENVELOPE] = enabled }
     suspend fun setMonthlyIncome(minor: Long) = dataStore.edit { it[KEY_INCOME] = minor }
 
+    /** Daily "log today's spending" reminder. Default OFF. */
+    val dailyReminderEnabled: Flow<Boolean> = dataStore.data.map { it[KEY_DAILY_REMINDER] ?: false }
+    suspend fun setDailyReminderEnabled(enabled: Boolean) = dataStore.edit { it[KEY_DAILY_REMINDER] = enabled }
+
+    /**
+     * Wipe every preference — used by the factory reset. Clearing also flips
+     * firstLaunchComplete back to false (its default), so the app re-onboards.
+     */
+    suspend fun clearAll() = dataStore.edit { it.clear() }
+
     private companion object {
         const val DEFAULT_CURRENCY = "INR"
         val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
@@ -77,5 +87,6 @@ class SettingsRepository @Inject constructor(
         val KEY_NUDGES = booleanPreferencesKey("proactive_nudges")
         val KEY_ENVELOPE = booleanPreferencesKey("envelope_mode")
         val KEY_INCOME = longPreferencesKey("monthly_income_minor")
+        val KEY_DAILY_REMINDER = booleanPreferencesKey("daily_reminder_enabled")
     }
 }

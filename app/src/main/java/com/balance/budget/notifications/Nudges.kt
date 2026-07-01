@@ -11,6 +11,7 @@ import com.balance.budget.R
 object Nudges {
     const val CHANNEL_ID = "balance_nudges"
     private const val NOTIFICATION_ID = 4201
+    private const val REMINDER_ID = 4202
 
     fun ensureChannel(context: Context) {
         val channel = NotificationChannel(
@@ -25,7 +26,13 @@ object Nudges {
     fun canPost(context: Context): Boolean =
         NotificationManagerCompat.from(context).areNotificationsEnabled()
 
-    fun post(context: Context, title: String, text: String) {
+    fun post(context: Context, title: String, text: String) = post(context, title, text, NOTIFICATION_ID)
+
+    /** The daily logging reminder — same channel, its own id so it doesn't replace a nudge. */
+    fun postReminder(context: Context, title: String, text: String) =
+        post(context, title, text, REMINDER_ID)
+
+    private fun post(context: Context, title: String, text: String, notificationId: Int) {
         if (!canPost(context)) return // graceful: never crash when denied
         ensureChannel(context)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -36,6 +43,6 @@ object Nudges {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()
-        runCatching { NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification) }
+        runCatching { NotificationManagerCompat.from(context).notify(notificationId, notification) }
     }
 }

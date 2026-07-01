@@ -42,11 +42,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.balance.budget.core.ui.components.AmountEntrySheet
+import com.balance.budget.core.ui.components.ConfirmSheet
 import com.balance.budget.core.ui.components.PressScale
 import com.balance.budget.core.ui.components.iconForKey
 import com.balance.budget.core.ui.components.parseColor
 import com.balance.budget.core.ui.theme.HeroAmountStyle
 import com.balance.budget.core.util.Money
+import com.balance.budget.domain.analytics.BudgetTemplate
 import com.balance.budget.domain.model.Category
 import com.balance.budget.feature.quickadd.NumberPad
 
@@ -66,6 +68,9 @@ fun BudgetsScreen(
     val state by viewModel.state.collectAsState()
     var editing: Editing? by remember { mutableStateOf(null) }
     var showMove by remember { mutableStateOf(false) }
+    var showClearAll by remember { mutableStateOf(false) }
+    var showTemplate by remember { mutableStateOf(false) }
+    val hasAnyBudget = state.overallBudgetMinor != null || state.categoryBudgets.isNotEmpty()
 
     LazyColumn(
         modifier = Modifier
@@ -100,6 +105,17 @@ fun BudgetsScreen(
                 leading = null,
                 onClick = { editing = Editing.Overall },
             )
+        }
+        state.monthlyIncomeMinor?.let { income ->
+            item {
+                BudgetRow(
+                    title = "Set budgets from income",
+                    subtitle = "Use a 50/30/20-style split of your ${Money.formatWhole(income)} income",
+                    valueText = "",
+                    leading = null,
+                    onClick = { showTemplate = true },
+                )
+            }
         }
         item {
             Text(
@@ -138,6 +154,17 @@ fun BudgetsScreen(
                 onClick = onManageCategories,
             )
         }
+        if (hasAnyBudget) {
+            item {
+                BudgetRow(
+                    title = "Clear budgets",
+                    subtitle = "Remove your monthly & per-category limits — expenses are kept",
+                    valueText = "",
+                    leading = null,
+                    onClick = { showClearAll = true },
+                )
+            }
+        }
     }
 
     when (val e = editing) {
@@ -152,8 +179,22 @@ fun BudgetsScreen(
             initialMinor = state.categoryBudgets[e.category.id],
             onSave = { viewModel.setCategoryBudget(e.category.id, it); editing = null },
             onDismiss = { editing = null },
+            onRemove = if (state.categoryBudgets.containsKey(e.category.id)) {
+                { viewModel.clearCategoryBudget(e.category.id); editing = null }
+            } else null,
         )
         null -> Unit
+    }
+
+    if (showClearAll) {
+        ConfirmSheet(
+            title = "Clear all budgets?",
+            body = "This removes your monthly budget and every per-category limit. " +
+                "Your expenses and history stay exactly as they are.",
+            confirmLabel = "Clear budgets",
+            onConfirm = { viewModel.clearAllBudgets(); showClearAll = false },
+            onDismiss = { showClearAll = false },
+        )
     }
 
     if (showMove) {
@@ -164,6 +205,119 @@ fun BudgetsScreen(
                 showMove = false
             },
             onDismiss = { showMove = false },
+        )
+    }
+
+    if (showTemplate) {
+        state.monthlyIncomeMinor?.let { income ->
+            TemplateSheet(
+                incomeMinor = income,
+                hasCategoryHistory = state.categoryBudgets.isNotEmpty() || state.slices.isNotEmpty(),
+                onApply = { rate -> viewModel.applyTemplate(rate); showTemplate = false },
+                onDismiss = { showTemplate = false },
+            )
+        }
+    }
+}
+
+private data class TemplatePreset(val label: String, val savingsRate: Int)
+
+private val templatePresets = listOf(
+    TemplatePreset("Save 20% · 50/30/20", 20),
+    TemplatePreset("Save 30%", 30),
+    TemplatePreset("Save 10%", 10),
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun TemplateSheet(
+    incomeMinor: Long,
+    hasCategoryHistory: Boolean,
+    onApply: (savingsRatePercent: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var rate by remember { mutableStateOf(20) }
+    val overall = BudgetTemplate.fromIncome(incomeMinor, rate).overallMinor
+    val savings = incomeMinor - overall
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp),
+        ) {
+            Text(
+                text = "Set budgets from income",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+            )
+            Text(
+                text = "Pick how much to set aside. The rest becomes your monthly budget.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                templatePresets.forEach { preset ->
+                    FilterChip(
+                        selected = rate == preset.savingsRate,
+                        onClick = { rate = preset.savingsRate },
+                        label = { Text(preset.label) },
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                PreviewLine("Monthly budget", Money.formatWhole(overall), emphasize = true)
+                PreviewLine("Set aside as savings", Money.formatWhole(savings), emphasize = false)
+                Text(
+                    text = if (hasCategoryHistory) {
+                        "Per-category limits follow last month's spending. You can fine-tune any of them after."
+                    } else {
+                        "Sets your overall monthly budget. Add per-category limits any time."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+            }
+
+            Button(
+                onClick = { onApply(rate) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+            ) {
+                Text("Apply budget", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewLine(label: String, value: String, emphasize: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = value,
+            style = if (emphasize) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+            color = if (emphasize) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
         )
     }
 }

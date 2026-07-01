@@ -1,6 +1,7 @@
 package com.balance.budget.data.repository
 
 import com.balance.budget.core.util.DateTimeUtil
+import com.balance.budget.data.local.dao.BudgetAdjustmentDao
 import com.balance.budget.data.local.dao.BudgetDao
 import com.balance.budget.data.local.entity.BudgetEntity
 import com.balance.budget.domain.model.Budget
@@ -14,6 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class BudgetRepository @Inject constructor(
     private val budgetDao: BudgetDao,
+    private val budgetAdjustmentDao: BudgetAdjustmentDao,
 ) {
     fun observeOverallBudget(ym: YearMonth): Flow<Budget?> =
         budgetDao.observeActiveOverall(DateTimeUtil.yearMonthKey(ym))
@@ -48,5 +50,20 @@ class BudgetRepository @Inject constructor(
                 effectiveFromYearMonth = DateTimeUtil.yearMonthKey(effectiveFrom),
             )
         )
+    }
+
+    /**
+     * Remove all budgets — the overall limit and every per-category limit, across
+     * all months (budgets are versioned, so a true unset clears the history too).
+     * Also drops any recorded budget moves. Expenses are untouched.
+     */
+    suspend fun clearAllBudgets() {
+        budgetDao.deleteAll()
+        budgetAdjustmentDao.deleteAll()
+    }
+
+    /** Remove the limit for a single category (all months). Expenses untouched. */
+    suspend fun clearCategoryBudget(categoryId: Long) {
+        budgetDao.deleteForCategory(categoryId)
     }
 }

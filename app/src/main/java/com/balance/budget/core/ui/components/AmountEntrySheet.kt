@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +39,8 @@ fun AmountEntrySheet(
     onDismiss: () -> Unit,
     initialMinor: Long? = null,
     saveLabel: String = "Save",
+    onRemove: (() -> Unit)? = null,
+    removeLabel: String = "Remove limit",
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var input by remember {
@@ -87,6 +90,14 @@ fun AmountEntrySheet(
                     .padding(top = 8.dp),
             ) {
                 Text(saveLabel, style = MaterialTheme.typography.titleMedium)
+            }
+            if (onRemove != null) {
+                TextButton(
+                    onClick = onRemove,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(removeLabel, color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
