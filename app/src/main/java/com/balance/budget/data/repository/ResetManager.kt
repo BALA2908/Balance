@@ -8,6 +8,8 @@ import com.balance.budget.data.local.BudgetDatabase
 import com.balance.budget.data.preferences.SettingsRepository
 import com.balance.budget.widget.SafeToSpendWidget
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,8 +30,12 @@ class ResetManager @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
 ) {
-    /** Erase everything, re-seed defaults, refresh the widget. */
-    suspend fun resetAll() {
+    /**
+     * Erase everything, re-seed defaults, refresh the widget. Runs off the main
+     * thread — [RoomDatabase.clearAllTables] asserts a background thread, and the
+     * caller (a ViewModel) launches on the main dispatcher.
+     */
+    suspend fun resetAll() = withContext(Dispatchers.IO) {
         // Room: clear all rows in all tables (keeps schema/version — no migration).
         database.clearAllTables()
         // Preferences + learned categorization.
@@ -44,11 +50,15 @@ class ResetManager @Inject constructor(
 
     /**
      * Relaunch the app on a fresh task so Compose + ViewModels rebuild against the
-     * wiped database and cleared preferences (which now re-onboards).
+     * wiped database and cleared preferences (which now re-onboards). Targets
+     * MainActivity explicitly — the app also exposes a Quick Add launcher alias, so
+     * getLaunchIntentForPackage would be ambiguous.
      */
     fun relaunch() {
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        if (intent != null) context.startActivity(intent)
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            setClassName(context, "com.balance.budget.MainActivity")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        context.startActivity(intent)
     }
 }
